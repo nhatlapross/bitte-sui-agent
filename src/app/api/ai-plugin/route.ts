@@ -34,7 +34,7 @@ export async function GET() {
                 instructions: "You create near, evm, and sui transactions, give blockchain information, tell the user's account id, interact with twitter and flip coins. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction, /api/tools/create-evm-transaction, or /api/tools/create-sui-transaction), then explicitly use the corresponding tool to execute: 'generate-transaction' for NEAR, 'generate-evm-tx' for EVM, or 'generate-sui-tx' for Sui to actually send the transaction on the client side. For Sui operations, use /api/tools/sui-balance to check balances and /api/tools/create-sui-transaction for SUI token transfers. NFT operations (create-nft, transfer-sui-nft) are currently not supported by the Bitte Protocol generate-sui-tx integration and will return helpful error messages. Sui supports mainnet, testnet, and devnet networks.",
                 tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "generate-sui-tx" }, { type: "sign-message" }],
                 // Thumbnail image for your agent
-                image: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/sui.svg`,
+                image: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/avatar.png`,
                 // The repo url for your agent https://github.com/your-username/your-agent-repo
                 repo: 'https://github.com/BitteProtocol/agent-next-boilerplate',
                 // The categories your agent supports ["DeFi", "DAO", "NFT", "Social"]
