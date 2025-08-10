@@ -30,15 +30,15 @@ export async function GET() {
             email: "youremail@gmail.com",
             assistant: {
                 name: "Blockchain Assistant",
-                description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR and EVM blockchains, and flips coins.",
-                instructions: "You create near and evm transactions, give blockchain information, tell the user's account id, interact with twitter and flip coins. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction or /api/tools/create-evm-transaction), then explicitly use the 'generate-transaction' tool for NEAR or 'generate-evm-tx' tool for EVM to actually send the transaction on the client side. For EVM transactions, make sure to provide the 'to' address (recipient) and 'amount' (in ETH) parameters when calling /api/tools/create-evm-transaction. Simply getting the payload from the endpoints is not enough - the corresponding tool must be used to execute the transaction.",
-                tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "sign-message" }],
+                description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR, EVM and Sui blockchains, and flips coins. Also supports Sui network operations including balance checking, transfers, and NFT minting/transfers.",
+                instructions: "You create near, evm, and sui transactions, give blockchain information, tell the user's account id, interact with twitter and flip coins. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction, /api/tools/create-evm-transaction, or /api/tools/create-sui-transaction), then explicitly use the corresponding tool to execute: 'generate-transaction' for NEAR, 'generate-evm-tx' for EVM, or 'generate-sui-tx' for Sui to actually send the transaction on the client side. For Sui operations, use /api/tools/sui-balance to check balances and /api/tools/create-sui-transaction for SUI token transfers. NFT operations (create-nft, transfer-sui-nft) are currently not supported by the Bitte Protocol generate-sui-tx integration and will return helpful error messages. Sui supports mainnet, testnet, and devnet networks.",
+                tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "generate-sui-tx" }, { type: "sign-message" }],
                 // Thumbnail image for your agent
                 image: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/bitte.svg`,
                 // The repo url for your agent https://github.com/your-username/your-agent-repo
                 repo: 'https://github.com/BitteProtocol/agent-next-boilerplate',
                 // The categories your agent supports ["DeFi", "DAO", "NFT", "Social"]
-                categories: ["DeFi", "DAO", "Social"],
+                categories: ["DeFi", "DAO", "NFT", "Social"],
                 // The chains your agent supports 1 = mainnet, 8453 = base
                 chainIds: [1, 8453]
             },
@@ -468,6 +468,252 @@ export async function GET() {
                     "200": { $ref: "#/components/responses/SignRequestResponse200" },
                 },
               },
+            },
+            "/api/tools/create-sui-transaction": {
+                get: {
+                    operationId: "createSuiTransaction",
+                    summary: "Create Sui transaction payload",
+                    description: "Creates a Sui transaction payload for transfers to be used with generate-sui-tx tool",
+                    parameters: [
+                        {
+                            name: "recipient",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The recipient Sui address"
+                        },
+                        {
+                            name: "amount",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The amount of SUI to send"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string",
+                                enum: ["mainnet", "testnet", "devnet"]
+                            },
+                            description: "The Sui network to use (default: devnet)"
+                        },
+                        {
+                            name: "type",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Transaction type (default: transfer)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            suiSignRequest: { type: "object" },
+                                            recipient: { type: "string" },
+                                            amount: { type: "number" },
+                                            network: { type: "string" },
+                                            message: { type: "string" },
+                                            bitteInstruction: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/sui-balance": {
+                get: {
+                    operationId: "getSuiBalance",
+                    summary: "Get Sui balance",
+                    description: "Check SUI balance and all coin types for an address on mainnet, testnet, or devnet",
+                    parameters: [
+                        {
+                            name: "address",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The Sui address to check balance for"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string",
+                                enum: ["mainnet", "testnet", "devnet"]
+                            },
+                            description: "The Sui network to use (default: devnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            address: { type: "string" },
+                                            network: { type: "string" },
+                                            suiBalance: { type: "string" },
+                                            totalCoins: { type: "number" },
+                                            coinTypes: { type: "array" },
+                                            hasNextPage: { type: "boolean" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/create-nft": {
+                get: {
+                    operationId: "createNft",
+                    summary: "Create NFT minting transaction",
+                    description: "Create a transaction to mint an NFT with specified metadata to be used with generate-sui-tx tool",
+                    parameters: [
+                        {
+                            name: "name",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The name of the NFT"
+                        },
+                        {
+                            name: "description",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The description of the NFT"
+                        },
+                        {
+                            name: "imageUrl",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The URL of the NFT image"
+                        },
+                        {
+                            name: "recipient",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The recipient Sui address for the NFT"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string",
+                                enum: ["mainnet", "testnet", "devnet"]
+                            },
+                            description: "The Sui network to use (default: devnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            suiSignRequest: { type: "object" },
+                                            nftDetails: { type: "object" },
+                                            network: { type: "string" },
+                                            message: { type: "string" },
+                                            bitteInstruction: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/transfer-sui-nft": {
+                get: {
+                    operationId: "transferSuiNft",
+                    summary: "Create NFT transfer transaction",
+                    description: "Create a transaction to transfer an NFT to another address to be used with generate-sui-tx tool",
+                    parameters: [
+                        {
+                            name: "objectId",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The object ID of the NFT to transfer"
+                        },
+                        {
+                            name: "recipient",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "The recipient Sui address"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string",
+                                enum: ["mainnet", "testnet", "devnet"]
+                            },
+                            description: "The Sui network to use (default: devnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            suiSignRequest: { type: "object" },
+                                            transfer: { type: "object" },
+                                            message: { type: "string" },
+                                            bitteInstruction: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             },
         },
         components: {
