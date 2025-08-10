@@ -13,28 +13,28 @@ export async function GET() {
     const pluginData = {
         openapi: "3.0.0",
         info: {
-            title: "Boilerplate Agent",
-            description: "API for the boilerplate",
+            title: "Miko Agent",
+            description: "API for the Miko Agent",
             version: "1.0.0"
         },
         servers: [
             {
                 // Enter the base and open url of your agent here, make sure it is reachable
-                url: "https://agent-next-boilerplate.vercel.app/"
+                url: "https://bitte-sui-agent-lime.vercel.app/"
             }
         ],
         "x-mb": {
             // The account id of the user who created the agent found in .env file
             "account-id": ACCOUNT_ID,
             // The email of the user who created the agent
-            email: "youremail@gmail.com",
+            email: "nhatlapross@gmail.com",
             assistant: {
-                name: "Blockchain Assistant",
+                name: "Miko Assistant",
                 description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR, EVM and Sui blockchains, and flips coins. Also supports Sui network operations including balance checking, transfers, and NFT minting/transfers.",
                 instructions: "You create near, evm, and sui transactions, give blockchain information, tell the user's account id, interact with twitter and flip coins. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction, /api/tools/create-evm-transaction, or /api/tools/create-sui-transaction), then explicitly use the corresponding tool to execute: 'generate-transaction' for NEAR, 'generate-evm-tx' for EVM, or 'generate-sui-tx' for Sui to actually send the transaction on the client side. For Sui operations, use /api/tools/sui-balance to check balances and /api/tools/create-sui-transaction for SUI token transfers. NFT operations (create-nft, transfer-sui-nft) are currently not supported by the Bitte Protocol generate-sui-tx integration and will return helpful error messages. Sui supports mainnet, testnet, and devnet networks.",
                 tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "generate-sui-tx" }, { type: "sign-message" }],
                 // Thumbnail image for your agent
-                image: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/bitte.svg`,
+                image: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/sui.svg`,
                 // The repo url for your agent https://github.com/your-username/your-agent-repo
                 repo: 'https://github.com/BitteProtocol/agent-next-boilerplate',
                 // The categories your agent supports ["DeFi", "DAO", "NFT", "Social"]
