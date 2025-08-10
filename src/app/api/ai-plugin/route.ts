@@ -30,8 +30,8 @@ export async function GET() {
             email: "nhatlapross@gmail.com",
             assistant: {
                 name: "Miko Assistant",
-                description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR, EVM and Sui blockchains, and flips coins. Also supports Sui network operations including balance checking, transfers, and NFT minting/transfers.",
-                instructions: "You create near, evm, and sui transactions, give blockchain information, tell the user's account id, interact with twitter and flip coins. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction, /api/tools/create-evm-transaction, or /api/tools/create-sui-transaction), then explicitly use the corresponding tool to execute: 'generate-transaction' for NEAR, 'generate-evm-tx' for EVM, or 'generate-sui-tx' for Sui to actually send the transaction on the client side. For Sui operations, use /api/tools/sui-balance to check balances and /api/tools/create-sui-transaction for SUI token transfers. NFT operations (create-nft, transfer-sui-nft) are currently not supported by the Bitte Protocol generate-sui-tx integration and will return helpful error messages. Sui supports mainnet, testnet, and devnet networks.",
+                description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR, EVM and Sui blockchains, flips coins, and provides real-time cryptocurrency price data. Also supports Sui network operations including balance checking, transfers, and NFT minting/transfers.",
+                instructions: "You create near, evm, and sui transactions, give blockchain information, tell the user's account id, interact with twitter, flip coins, and provide cryptocurrency price data. For crypto prices, use /api/tools/crypto-prices to get real-time market data for various cryptocurrencies. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction, /api/tools/create-evm-transaction, or /api/tools/create-sui-transaction), then explicitly use the corresponding tool to execute: 'generate-transaction' for NEAR, 'generate-evm-tx' for EVM, or 'generate-sui-tx' for Sui to actually send the transaction on the client side. For Sui operations, use /api/tools/sui-balance to check balances and /api/tools/create-sui-transaction for SUI token transfers. NFT operations (create-nft, transfer-sui-nft) are currently not supported by the Bitte Protocol generate-sui-tx integration and will return helpful error messages. Sui supports mainnet, testnet, and devnet networks.",
                 tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "generate-sui-tx" }, { type: "sign-message" }],
                 // Thumbnail image for your agent
                 image: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/avatar.png`,
@@ -707,6 +707,100 @@ export async function GET() {
                                             transfer: { type: "object" },
                                             message: { type: "string" },
                                             bitteInstruction: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/crypto-prices": {
+                get: {
+                    operationId: "getCryptoPrices",
+                    summary: "Get cryptocurrency prices",
+                    description: "Fetch real-time cryptocurrency prices and market data from CoinGecko API",
+                    parameters: [
+                        {
+                            name: "coins",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Comma-separated list of coin IDs (e.g., 'bitcoin,ethereum,near'). Defaults to popular coins."
+                        },
+                        {
+                            name: "currency",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string",
+                                enum: ["usd", "eur", "gbp", "jpy", "cny"]
+                            },
+                            description: "The currency to display prices in (default: usd)"
+                        },
+                        {
+                            name: "limit",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "integer",
+                                minimum: 1,
+                                maximum: 50
+                            },
+                            description: "Number of coins to return (default: 10, max: 50)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Whether the request was successful"
+                                            },
+                                            data: {
+                                                type: "array",
+                                                items: {
+                                                    type: "object",
+                                                    properties: {
+                                                        id: { type: "string" },
+                                                        symbol: { type: "string" },
+                                                        name: { type: "string" },
+                                                        price: { type: "number" },
+                                                        marketCap: { type: "number" },
+                                                        rank: { type: "number" },
+                                                        change24h: { type: "number" },
+                                                        change7d: { type: "number" },
+                                                        volume24h: { type: "number" },
+                                                        supply: { type: "number" },
+                                                        currency: { type: "string" }
+                                                    }
+                                                }
+                                            },
+                                            timestamp: { type: "string" },
+                                            currency: { type: "string" },
+                                            count: { type: "number" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Error response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            error: { type: "string" },
+                                            message: { type: "string" }
                                         }
                                     }
                                 }
