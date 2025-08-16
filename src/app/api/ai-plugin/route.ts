@@ -13,8 +13,8 @@ export async function GET() {
     const pluginData = {
         openapi: "3.0.0",
         info: {
-            title: "Miko Agent",
-            description: "API for the Miko Agent",
+            title: "Sui Blockchain Agent",
+            description: "Comprehensive Sui blockchain agent supporting NFTs, DeFi, transactions and utilities",
             version: "1.0.0"
         },
         servers: [
@@ -29,9 +29,9 @@ export async function GET() {
             // The email of the user who created the agent
             email: "nhatlapross@gmail.com",
             assistant: {
-                name: "Miko Assistant",
-                description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR, EVM and Sui blockchains, flips coins, and provides real-time cryptocurrency price data. Also supports Sui network operations including balance checking, transfers, and NFT minting/transfers.",
-                instructions: "You create near, evm, and sui transactions, give blockchain information, tell the user's account id, interact with twitter, flip coins, and provide cryptocurrency price data. For crypto prices, use /api/tools/crypto-prices to get real-time market data for various cryptocurrencies. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction, /api/tools/create-evm-transaction, or /api/tools/create-sui-transaction), then explicitly use the corresponding tool to execute: 'generate-transaction' for NEAR, 'generate-evm-tx' for EVM, or 'generate-sui-tx' for Sui to actually send the transaction on the client side. For Sui operations, use /api/tools/sui-balance to check balances and /api/tools/create-sui-transaction for SUI token transfers. NFT operations (create-nft, transfer-sui-nft) are currently not supported by the Bitte Protocol generate-sui-tx integration and will return helpful error messages. Sui supports mainnet, testnet, and devnet networks.",
+                name: "Sui Blockchain Assistant",
+                description: "Comprehensive assistant for Sui blockchain operations including NFT marketplace, DeFi token swaps, kiosk management, transaction creation, balance checking, and general blockchain utilities. Supports NEAR and EVM chains as well.",
+                instructions: "You handle comprehensive Sui blockchain operations. NFT TOOLS: mint-nft (create NFT), list-nft (list for sale), buy-nft (purchase), check-nft-wallet (view owned NFTs), create-kiosk (trading setup). DeFi TOOLS: swap-token (DeepBook DEX), sui-balance (check balances), crypto-prices (market data). TRANSACTION TOOLS: create-sui-transaction, create-near-transaction, create-evm-transaction then execute with generate-sui-tx, generate-transaction, generate-evm-tx respectively. UTILITIES: get-user, get-blockchains, twitter, coinflip, test-sui-call. Always use generate-sui-tx for Sui transactions after creating them.",
                 tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "generate-sui-tx" }, { type: "sign-message" }],
                 // Thumbnail image for your agent
                 image: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/avatar.png`,
@@ -44,6 +44,280 @@ export async function GET() {
             },
         },
         paths: {
+            "/api/tools/mint-nft": {
+                get: {
+                    operationId: "mintNft",
+                    summary: "Mint NFT",
+                    description: "Mint a new NFT using the simple_nft contract and transfer to user's wallet",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The user's Sui address"
+                        },
+                        {
+                            name: "name",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "NFT name"
+                        },
+                        {
+                            name: "description",
+                            in: "query", 
+                            required: true,
+                            schema: { type: "string" },
+                            description: "NFT description"
+                        },
+                        {
+                            name: "imageUrl",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "NFT image URL"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string", enum: ["mainnet", "testnet", "devnet"] },
+                            description: "The Sui network to use (default: testnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            suiSignRequest: { type: "object" },
+                                            data: { type: "object" },
+                                            message: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/buy-nft": {
+                get: {
+                    operationId: "buyNftMarketplace", 
+                    summary: "Buy NFT from marketplace",
+                    description: "Purchase an NFT from the marketplace using SUI coins",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The buyer's Sui address"
+                        },
+                        {
+                            name: "nftId",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The NFT ID to purchase"
+                        },
+                        {
+                            name: "paymentAmount",
+                            in: "query",
+                            required: true,
+                            schema: { type: "number", minimum: 0.001 },
+                            description: "Payment amount in SUI"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string", enum: ["mainnet", "testnet", "devnet"] },
+                            description: "The Sui network to use (default: testnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            suiSignRequest: { type: "object" },
+                                            data: { type: "object" },
+                                            message: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/list-nft": {
+                get: {
+                    operationId: "listNft",
+                    summary: "List NFT for sale",
+                    description: "List an NFT for sale on the marketplace with specified price",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The user's Sui address"
+                        },
+                        {
+                            name: "nftId",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The NFT ID to list for sale"
+                        },
+                        {
+                            name: "price",
+                            in: "query",
+                            required: true,
+                            schema: { type: "number", minimum: 0.001 },
+                            description: "The sale price in SUI"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string", enum: ["mainnet", "testnet", "devnet"] },
+                            description: "The Sui network to use (default: testnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            suiSignRequest: { type: "object" },
+                                            data: { type: "object" },
+                                            message: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/check-nft-wallet": {
+                get: {
+                    operationId: "checkNftWallet",
+                    summary: "Check NFTs in wallet",
+                    description: "Check all NFTs owned by a user's wallet address",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The user's Sui address to check"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string", enum: ["mainnet", "testnet", "devnet"] },
+                            description: "The Sui network to use (default: testnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    walletAddress: { type: "string" },
+                                                    network: { type: "string" },
+                                                    nfts: {
+                                                        type: "array",
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                id: { type: "string" },
+                                                                name: { type: "string" },
+                                                                description: { type: "string" },
+                                                                imageUrl: { type: "string" },
+                                                                creator: { type: "string" }
+                                                            }
+                                                        }
+                                                    },
+                                                    nftCount: { type: "number" },
+                                                    suiBalance: { type: "object" }
+                                                }
+                                            },
+                                            message: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/create-kiosk": {
+                get: {
+                    operationId: "createKiosk",
+                    summary: "Create trading kiosk",
+                    description: "Create a new Kiosk for storing and trading NFTs",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The user's Sui address who will own the kiosk"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string", enum: ["mainnet", "testnet", "devnet"] },
+                            description: "The Sui network to use (default: testnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            suiSignRequest: { type: "object" },
+                                            data: { type: "object" },
+                                            message: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "/api/tools/get-blockchains": {
                 get: {
                     summary: "get blockchain information",
@@ -809,6 +1083,83 @@ export async function GET() {
                     }
                 }
             },
+            "/api/tools/create-nft-collection": {
+                get: {
+                    operationId: "createNftCollection",
+                    summary: "Create NFT collection",
+                    description: "Create a new NFT collection with royalty settings for the marketplace, compatible with generate-sui-tx tool",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The user's Sui address"
+                        },
+                        {
+                            name: "name",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The name of the NFT collection"
+                        },
+                        {
+                            name: "description",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The description of the NFT collection"
+                        },
+                        {
+                            name: "maxSupply",
+                            in: "query",
+                            required: true,
+                            schema: { type: "integer" },
+                            description: "Maximum number of NFTs in this collection"
+                        },
+                        {
+                            name: "royaltyFeeBps",
+                            in: "query",
+                            required: true,
+                            schema: { type: "integer" },
+                            description: "Royalty fee in basis points (100 = 1%, max 1000 = 10%)"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string", enum: ["mainnet", "testnet", "devnet"] },
+                            description: "The Sui network to use (default: devnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            data: { 
+                                                type: "object",
+                                                properties: {
+                                                    suiTransactionBytes: { type: "string" },
+                                                    ownerAddress: { type: "string" },
+                                                    network: { type: "string" },
+                                                    packageId: { type: "string" },
+                                                    transactionSize: { type: "number" }
+                                                }
+                                            },
+                                            message: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         },
         components: {
       parameters: {
@@ -852,3 +1203,4 @@ export async function GET() {
 
     return NextResponse.json(pluginData);
 }
+                 
