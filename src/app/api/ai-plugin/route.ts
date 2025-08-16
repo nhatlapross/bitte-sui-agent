@@ -31,7 +31,7 @@ export async function GET() {
             assistant: {
                 name: "Sui Blockchain Assistant",
                 description: "Comprehensive assistant for Sui blockchain operations including NFT marketplace, DeFi token swaps, kiosk management, transaction creation, balance checking, and general blockchain utilities. Supports NEAR and EVM chains as well.",
-                instructions: "You handle comprehensive Sui blockchain operations. NFT TOOLS: mint-nft (create NFT), list-nft (list for sale), buy-nft (purchase), check-nft-wallet (view owned NFTs), create-kiosk (trading setup). DeFi TOOLS: swap-token (DeepBook DEX), sui-balance (check balances), crypto-prices (market data). TRANSACTION TOOLS: create-sui-transaction, create-near-transaction, create-evm-transaction then execute with generate-sui-tx, generate-transaction, generate-evm-tx respectively. UTILITIES: get-user, get-blockchains, twitter, coinflip, test-sui-call. Always use generate-sui-tx for Sui transactions after creating them.",
+                instructions: "You handle comprehensive Sui blockchain operations. NFT TOOLS: mint-nft (create NFT), list-nft (list for sale), buy-nft (purchase), check-nft-wallet (view owned NFTs), create-kiosk (trading setup). PORTFOLIO TOOLS: sui-portfolio (complete wallet analysis with NFTs, coins, objects, USD value estimates). DeFi TOOLS: sui-swap (simple token swaps), swap-token (advanced Cetus DEX), sui-balance (check balances), crypto-prices (market data). TRANSACTION TOOLS: create-sui-transaction, create-near-transaction, create-evm-transaction then execute with generate-sui-tx, generate-transaction, generate-evm-tx respectively. UTILITIES: get-user, get-blockchains, twitter, coinflip, test-sui-call. Always use generate-sui-tx for Sui transactions after creating them.",
                 tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "generate-sui-tx" }, { type: "sign-message" }],
                 // Thumbnail image for your agent
                 image: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/avatar.png`,
@@ -266,6 +266,166 @@ export async function GET() {
                                                     },
                                                     nftCount: { type: "number" },
                                                     suiBalance: { type: "object" }
+                                                }
+                                            },
+                                            message: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/sui-swap": {
+                get: {
+                    operationId: "suiSwapTokens",
+                    summary: "Swap tokens on Sui",
+                    description: "Simple token swap on Sui blockchain with slippage protection. Supports SUI, USDC, USDT, WETH and custom tokens.",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The user's Sui address"
+                        },
+                        {
+                            name: "tokenFrom",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "Token to swap from (SUI, USDC, USDT, WETH or full address)"
+                        },
+                        {
+                            name: "tokenTo",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "Token to swap to (SUI, USDC, USDT, WETH or full address)"
+                        },
+                        {
+                            name: "amountIn",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "Amount to swap (in decimal format, e.g. '1.5')"
+                        },
+                        {
+                            name: "slippageTolerance",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string" },
+                            description: "Slippage tolerance percentage (default: 0.5)"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string", enum: ["mainnet", "testnet", "devnet"] },
+                            description: "The Sui network to use (default: testnet)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            suiSignRequest: { type: "object" },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    swap: {
+                                                        type: "object",
+                                                        properties: {
+                                                            tokenFrom: { type: "string" },
+                                                            tokenTo: { type: "string" },
+                                                            amountIn: { type: "string" },
+                                                            estimatedOutput: { type: "string" },
+                                                            minOutput: { type: "string" },
+                                                            slippageTolerance: { type: "string" }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            message: { type: "string" },
+                                            note: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/sui-portfolio": {
+                get: {
+                    operationId: "getSuiPortfolio",
+                    summary: "Track Sui wallet portfolio",
+                    description: "Comprehensive portfolio tracking for Sui wallet including NFTs, all coin types, objects, and estimated USD values",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "The user's Sui address to track"
+                        },
+                        {
+                            name: "network",
+                            in: "query",
+                            required: false,
+                            schema: { type: "string", enum: ["mainnet", "testnet", "devnet"] },
+                            description: "The Sui network to use (default: testnet)"
+                        },
+                        {
+                            name: "includePrices",
+                            in: "query",
+                            required: false,
+                            schema: { type: "boolean" },
+                            description: "Include USD price estimates (only works on mainnet, default: false)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "boolean" },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    walletAddress: { type: "string" },
+                                                    network: { type: "string" },
+                                                    summary: {
+                                                        type: "object",
+                                                        properties: {
+                                                            totalObjects: { type: "number" },
+                                                            totalCoins: { type: "number" },
+                                                            totalNfts: { type: "number" },
+                                                            totalOtherObjects: { type: "number" },
+                                                            estimatedUsdValue: { type: "string" }
+                                                        }
+                                                    },
+                                                    suiBalance: {
+                                                        type: "object",
+                                                        properties: {
+                                                            balance: { type: "string" },
+                                                            balanceInSui: { type: "number" },
+                                                            coinCount: { type: "number" }
+                                                        }
+                                                    },
+                                                    coins: { type: "object" },
+                                                    nfts: { type: "array" },
+                                                    otherObjects: { type: "array" },
+                                                    lastUpdated: { type: "string" }
                                                 }
                                             },
                                             message: { type: "string" }
